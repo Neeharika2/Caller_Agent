@@ -3,11 +3,19 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 # Load .env file from the root directory of the workspace
-env_path = Path(__file__).resolve().parent.parent / '.env'
+env_path = Path(__file__).resolve().parent / '.env'
 load_dotenv(dotenv_path=env_path)
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 MODEL = os.getenv("MODEL", "gemini-3.1-flash-live-preview")
+
+# Exotel Integration Configuration
+EXOTEL_ACCOUNT_SID = os.getenv("EXOTEL_ACCOUNT_SID")
+EXOTEL_API_KEY = os.getenv("EXOTEL_API_KEY")
+EXOTEL_API_TOKEN = os.getenv("EXOTEL_API_TOKEN")
+EXOTEL_SUBDOMAIN = os.getenv("EXOTEL_SUBDOMAIN", "api.exotel.com")
+NGROK_AUTHTOKEN = os.getenv("NGROK_AUTHTOKEN")
+
 
 # Audio Configuration
 INPUT_SAMPLE_RATE = 16000   # Expected by Gemini Live API (16kHz PCM)
