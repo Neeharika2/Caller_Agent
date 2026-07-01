@@ -21,7 +21,7 @@ def main():
         print("[ngrok] Connecting tunnel to port 8000 in a separate process...", flush=True)
         listener = ngrok.forward(addr=8000, authtoken=config.NGROK_AUTHTOKEN)
         public_url = listener.url()
-        ws_url = public_url.replace("https://", "wss://").replace("http://", "ws://") + "/media"
+        ws_url = public_url.replace("https://", "wss://").replace("http://", "ws://") + "/media?sample-rate=16000"
         print("\n" + "="*80)
         print(f" ngrok public HTTP URL: {public_url}")
         print(f" Exotel AgentStream Webhook URL: {ws_url}")
