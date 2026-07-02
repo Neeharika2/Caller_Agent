@@ -2,10 +2,12 @@ import json
 import base64
 import websockets
 import config
+from runtime.tools import default_tool_registry
 
 class GeminiLiveProvider:
-    def __init__(self):
+    def __init__(self, tool_registry=default_tool_registry):
         self.websocket = None
+        self.tool_registry = tool_registry
 
     async def connect(self):
         # Format raw WebSocket URL with API key
@@ -30,6 +32,7 @@ class GeminiLiveProvider:
                 "generationConfig": {
                     "responseModalities": ["AUDIO"]
                 },
+                "tools": self.tool_registry.as_gemini_tools(),
                 "inputAudioTranscription": {},
                 "outputAudioTranscription": {}
             }
@@ -66,6 +69,11 @@ class GeminiLiveProvider:
                     yield json.loads(message_str)
             except websockets.exceptions.ConnectionClosed:
                 pass
+
+    async def send_tool_response(self, tool_call: dict):
+        if self.websocket:
+            response_msg = await self.tool_registry.build_tool_response(tool_call)
+            await self.websocket.send(json.dumps(response_msg))
 
     async def disconnect(self):
         if self.websocket:

@@ -9,6 +9,7 @@ from fastapi.websockets import WebSocketState
 import uvicorn
 import websockets
 import config
+from runtime.tools import default_tool_registry
 
 app = FastAPI()
 
@@ -59,10 +60,11 @@ async def websocket_endpoint(exotel_ws: WebSocket):
                     "systemInstruction": {
                         "parts": [
                             {
-                                "text": "You are a helpful, snappy telephone voice assistant. Detect the caller's language from their speech and reply in the same language. If the caller switches languages, switch with them. For Indian callers, comfortably support Hindi, English, Hinglish, and regional languages. Keep replies short and natural. Respond immediately without long preambles. Avoid bullet points, lists, markdown formatting, or lengthy explanations."
+                                "text": "You are a helpful, snappy telephone voice assistant. Detect the caller's language from their speech and reply in the same language. If the caller switches languages, switch with them. For Indian callers, comfortably support Hindi, English, Hinglish, and regional languages. Keep replies short and natural. Respond immediately without long preambles. Avoid bullet points, lists, markdown formatting, or lengthy explanations. If the caller asks for the current time, use the get_current_time tool before answering."
                             }
                         ]
                     },
+                    "tools": default_tool_registry.as_gemini_tools(),
                     "realtimeInputConfig": {
                         "automaticActivityDetection": {
                             "disabled": False,
@@ -233,6 +235,17 @@ async def websocket_endpoint(exotel_ws: WebSocket):
                 try:
                     async for message_str in gemini_ws:
                         response = json.loads(message_str)
+                        tool_call = response.get("toolCall")
+                        if tool_call:
+                            names = [
+                                function_call.get("name", "<unknown>")
+                                for function_call in tool_call.get("functionCalls", [])
+                            ]
+                            print(f"[Gemini Tool Call] {', '.join(names)}", flush=True)
+                            tool_response = await default_tool_registry.build_tool_response(tool_call)
+                            await gemini_ws.send(json.dumps(tool_response))
+                            continue
+
                         server_content = response.get("serverContent")
                         if not server_content:
                             continue

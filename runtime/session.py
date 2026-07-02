@@ -57,6 +57,16 @@ class VoiceSession:
                 if not self._running:
                     break
 
+                tool_call = response.get("toolCall")
+                if tool_call:
+                    names = [
+                        function_call.get("name", "<unknown>")
+                        for function_call in tool_call.get("functionCalls", [])
+                    ]
+                    print(f"\n[Tool Call] {', '.join(names)}", flush=True)
+                    await self.provider.send_tool_response(tool_call)
+                    continue
+
                 # Extract serverContent payload (camelCase in raw WebSockets)
                 server_content = response.get("serverContent")
                 if not server_content:

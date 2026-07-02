@@ -37,6 +37,7 @@ graph TD
 *   `config.py`: Centralized configuration loading variables from `.env` and setting audio sample rates.
 *   `providers/gemini_live.py`: WebSocket client provider wrapper for connecting and talking to the Gemini Live API.
 *   `runtime/session.py`: Coordinates microphone input, speaker output, and the Gemini provider for the local client.
+*   `runtime/tools.py`: Generic Gemini Live function-calling registry with a starter `get_current_time` tool.
 *   `audio/`:
     *   `microphone.py`: Non-blocking microphone capture (using PyAudio) running on standard 16kHz mono.
     *   `speaker.py`: Low-latency thread-safe audio playback stream (using PyAudio) with clear queue functionality.
@@ -126,6 +127,24 @@ You will be prompted to:
 3.  **Enter the Webhook URL**: Paste the `wss://...` URL printed by `run_tunnel.py` in Step 2.
 
 Exotel will call your phone. As soon as you answer, the greeting prompt will trigger Gemini to say hello, and you can carry on a live bidirectional conversation.
+
+---
+
+## Function Calling Tools
+
+The app now registers tools with Gemini during Live API setup and handles `toolCall` messages manually in both local voice mode and Exotel telephony mode. The first registered tool is:
+
+```python
+get_current_time(timezone="Asia/Kolkata")
+```
+
+To add another tool:
+
+1. Add the Python function in `runtime/tools.py`.
+2. Register its Gemini function declaration in `create_default_tool_registry()`.
+3. Keep the function return value JSON-serializable, preferably a `dict`.
+
+The bridge will execute matching Python functions and send the result back as a `toolResponse`.
 
 ---
 
