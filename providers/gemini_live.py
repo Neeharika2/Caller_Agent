@@ -32,6 +32,13 @@ class GeminiLiveProvider:
                 "generationConfig": {
                     "responseModalities": ["AUDIO"]
                 },
+                "systemInstruction": {
+                    "parts": [
+                        {
+                            "text": "You are a helpful, snappy voice assistant. Keep replies short and natural. If the user asks for the current time, use the get_current_time tool before answering. If the user asks about business details, products, services, policies, pricing, availability, or support information, use the search_knowledge tool before answering."
+                        }
+                    ]
+                },
                 "tools": self.tool_registry.as_gemini_tools(),
                 "inputAudioTranscription": {},
                 "outputAudioTranscription": {}

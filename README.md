@@ -38,6 +38,7 @@ graph TD
 *   `providers/gemini_live.py`: WebSocket client provider wrapper for connecting and talking to the Gemini Live API.
 *   `runtime/session.py`: Coordinates microphone input, speaker output, and the Gemini provider for the local client.
 *   `runtime/tools.py`: Generic Gemini Live function-calling registry with a starter `get_current_time` tool.
+*   `knowledge/`: Local files searched by the `search_knowledge` tool.
 *   `audio/`:
     *   `microphone.py`: Non-blocking microphone capture (using PyAudio) running on standard 16kHz mono.
     *   `speaker.py`: Low-latency thread-safe audio playback stream (using PyAudio) with clear queue functionality.
@@ -132,11 +133,14 @@ Exotel will call your phone. As soon as you answer, the greeting prompt will tri
 
 ## Function Calling Tools
 
-The app now registers tools with Gemini during Live API setup and handles `toolCall` messages manually in both local voice mode and Exotel telephony mode. The first registered tool is:
+The app now registers tools with Gemini during Live API setup and handles `toolCall` messages manually in both local voice mode and Exotel telephony mode. The first registered tools are:
 
 ```python
 get_current_time(timezone="Asia/Kolkata")
+search_knowledge(query, max_results=3)
 ```
+
+`search_knowledge` reads local `.md`, `.txt`, and `.json` files from `knowledge/`, scores matching text snippets, and returns the best few results to Gemini. Start by editing `knowledge/faq.md` with your business-specific answers.
 
 To add another tool:
 
