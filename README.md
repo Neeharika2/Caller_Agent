@@ -152,6 +152,14 @@ The bridge will execute matching Python functions and send the result back as a 
 
 ---
 
+## Call Records
+
+Exotel calls now save a JSON artifact under `call_records/` when the bridge session closes. Each record includes call metadata, caller and assistant transcript lines, and an auto-generated lead summary with intent, language, urgency, and next action fields.
+
+The folder is ignored by git because it contains live call data.
+
+---
+
 ## Audio Technical Details
 
 *   **Sample Rate Conversion**:

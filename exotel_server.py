@@ -9,6 +9,7 @@ from fastapi.websockets import WebSocketState
 import uvicorn
 import websockets
 import config
+from runtime.call_records import CallRecord
 from runtime.tools import default_tool_registry
 
 app = FastAPI()
@@ -44,6 +45,7 @@ async def websocket_endpoint(exotel_ws: WebSocket):
     print(f"[Exotel] Caller connected to /media. URL sample rate hint: {exotel_sample_rate}Hz", flush=True)
 
     stream_sid = None
+    call_record = CallRecord()
 
     # Connect to Gemini Live API with keepalive ping to avoid timeout issues
     try:
@@ -117,6 +119,12 @@ async def websocket_endpoint(exotel_ws: WebSocket):
                                     inbound_state = None
                                     print(f"[Exotel] Using start-event sample rate: {exotel_sample_rate}Hz", flush=True)
 
+                            call_record.mark_started(
+                                stream_sid=stream_sid,
+                                sample_rate_hz=exotel_sample_rate,
+                                metadata=data.get("start", {}),
+                            )
+
                             # Send initial greeting trigger turn to make Gemini speak first as soon as call connects
                             initial_greeting = {
                                 "clientContent": {
@@ -183,6 +191,7 @@ async def websocket_endpoint(exotel_ws: WebSocket):
 
                         elif event == "stop":
                             print(f"[Exotel] Stream stopped for Stream SID: {stream_sid}", flush=True)
+                            call_record.mark_stopped()
                             break
                 except asyncio.CancelledError:
                     pass
@@ -273,12 +282,16 @@ async def websocket_endpoint(exotel_ws: WebSocket):
                         # Log input transcript if present. This proves caller audio reached Gemini.
                         input_transcription = server_content.get("inputTranscription")
                         if input_transcription and input_transcription.get("text"):
-                            print(f"[Gemini Input Transcription] {input_transcription.get('text')}", flush=True)
+                            input_text = input_transcription.get("text")
+                            call_record.add_transcript("caller", input_text)
+                            print(f"[Gemini Input Transcription] {input_text}", flush=True)
 
                         # Log output transcript if present
                         output_transcription = server_content.get("outputTranscription")
                         if output_transcription and output_transcription.get("text"):
-                            print(f"[Gemini Transcription] {output_transcription.get('text')}", flush=True)
+                            output_text = output_transcription.get("text")
+                            call_record.add_transcript("assistant", output_text)
+                            print(f"[Gemini Transcription] {output_text}", flush=True)
 
                         model_turn = server_content.get("modelTurn")
                         if model_turn:
@@ -336,6 +349,11 @@ async def websocket_endpoint(exotel_ws: WebSocket):
         print(f"[Error] WebSocket bridge error: {e}", flush=True)
         traceback.print_exc()
     finally:
+        try:
+            saved_path = call_record.save()
+            print(f"[Call Record] Saved call summary: {saved_path}", flush=True)
+        except Exception as save_error:
+            print(f"[Call Record] Failed to save call summary: {save_error}", flush=True)
         print("[Bridge] Closed call WebSocket session.", flush=True)
 
 if __name__ == "__main__":
