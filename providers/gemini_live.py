@@ -35,7 +35,7 @@ class GeminiLiveProvider:
                 "systemInstruction": {
                     "parts": [
                         {
-                            "text": "You are a helpful, snappy voice assistant. Keep replies short and natural. If the user asks for the current time, use the get_current_time tool before answering. If the user asks about business details, products, services, policies, pricing, availability, or support information, use the search_knowledge tool before answering."
+                            "text": "You are a helpful, snappy voice assistant. Keep replies short and natural. If the user asks for the current time, use the get_current_time tool before answering. If the user asks about business details, products, services, policies, pricing, availability, or support information, use the search_knowledge tool before answering. If the user wants a callback, booking, sales follow-up, support follow-up, or gives contact details, collect their name, phone number if needed, requirement, preferred callback time if relevant, language, urgency, and notes, then use the save_lead tool. Ask only one missing detail at a time and do not make the user repeat details they already gave."
                         }
                     ]
                 },

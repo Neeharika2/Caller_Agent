@@ -138,9 +138,12 @@ The app now registers tools with Gemini during Live API setup and handles `toolC
 ```python
 get_current_time(timezone="Asia/Kolkata")
 search_knowledge(query, max_results=3)
+save_lead(name, phone, requirement, callback_time, language, urgency, notes)
 ```
 
 `search_knowledge` reads local `.md`, `.txt`, and `.json` files from `knowledge/`, scores matching text snippets, and returns the best few results to Gemini. Start by editing `knowledge/faq.md` with your business-specific answers.
+
+`save_lead` writes structured lead JSON files under `leads/` when a caller asks for a callback, booking, sales follow-up, support follow-up, or provides contact details. The assistant is prompted to collect one missing detail at a time instead of turning the call into a form.
 
 To add another tool:
 
@@ -156,7 +159,7 @@ The bridge will execute matching Python functions and send the result back as a 
 
 Exotel calls now save a JSON artifact under `call_records/` when the bridge session closes. Each record includes call metadata, caller and assistant transcript lines, and an auto-generated lead summary with intent, language, urgency, and next action fields.
 
-The folder is ignored by git because it contains live call data.
+The `call_records/` and `leads/` folders are ignored by git because they contain live call data.
 
 ---
 

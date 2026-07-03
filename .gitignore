@@ -6,6 +6,7 @@ __pycache__/
 # Logs
 *.log
 call_records/
+leads/
 
 # Environment variables (contains credentials)
 .env

@@ -9,6 +9,7 @@ from zoneinfo import ZoneInfo
 
 
 KNOWLEDGE_DIR = Path(__file__).resolve().parents[1] / "knowledge"
+LEADS_DIR = Path(__file__).resolve().parents[1] / "leads"
 SUPPORTED_KNOWLEDGE_EXTENSIONS = {".md", ".txt", ".json"}
 
 
@@ -83,6 +84,62 @@ def get_current_time(timezone: str = "Asia/Kolkata") -> dict[str, str]:
         "time": now.strftime("%I:%M %p"),
         "timezone": timezone,
         "iso": now.isoformat(),
+    }
+
+
+def _safe_filename(value: str) -> str:
+    return re.sub(r"[^a-zA-Z0-9_.-]+", "_", value).strip("_")[:80] or "lead"
+
+
+def _clean_optional_text(value: Any) -> str | None:
+    if value is None:
+        return None
+    cleaned = " ".join(str(value).split())
+    return cleaned or None
+
+
+def save_lead(
+    name: str | None = None,
+    phone: str | None = None,
+    requirement: str | None = None,
+    callback_time: str | None = None,
+    language: str | None = None,
+    urgency: str | None = None,
+    notes: str | None = None,
+) -> dict[str, Any]:
+    created_at = datetime.now(ZoneInfo("Asia/Kolkata"))
+    lead = {
+        "name": _clean_optional_text(name),
+        "phone": _clean_optional_text(phone),
+        "requirement": _clean_optional_text(requirement),
+        "callback_time": _clean_optional_text(callback_time),
+        "language": _clean_optional_text(language),
+        "urgency": _clean_optional_text(urgency) or "medium",
+        "notes": _clean_optional_text(notes),
+        "created_at": created_at.isoformat(),
+        "source": "gemini_live_tool",
+    }
+
+    missing_fields = [
+        field_name
+        for field_name in ("name", "phone", "requirement")
+        if not lead.get(field_name)
+    ]
+
+    LEADS_DIR.mkdir(parents=True, exist_ok=True)
+    timestamp = _safe_filename(created_at.isoformat().replace(":", "-").replace("+", "_"))
+    identifier = _safe_filename(lead.get("phone") or lead.get("name") or "unknown")
+    path = LEADS_DIR / f"{timestamp}_{identifier}.json"
+    path.write_text(json.dumps(lead, indent=2, ensure_ascii=False), encoding="utf-8")
+
+    return {
+        "saved": True,
+        "path": str(path),
+        "lead": lead,
+        "missing_fields": missing_fields,
+        "message": (
+            "Lead saved. If missing_fields is not empty, naturally ask the caller for those details before ending the call."
+        ),
     }
 
 
@@ -225,6 +282,50 @@ def create_default_tool_registry() -> ToolRegistry:
             },
         },
         search_knowledge,
+    )
+    registry.register(
+        {
+            "name": "save_lead",
+            "description": (
+                "Save a sales, support, callback, booking, or business inquiry lead. "
+                "Use this after collecting the caller's name, phone number if available, and what they need."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "Caller name, if the caller provided it.",
+                    },
+                    "phone": {
+                        "type": "string",
+                        "description": "Caller phone number or callback number, if available.",
+                    },
+                    "requirement": {
+                        "type": "string",
+                        "description": "Short description of what the caller wants or asked for.",
+                    },
+                    "callback_time": {
+                        "type": "string",
+                        "description": "Preferred callback or appointment time in the caller's words.",
+                    },
+                    "language": {
+                        "type": "string",
+                        "description": "Language the caller used, for example English, Hindi, or Hinglish.",
+                    },
+                    "urgency": {
+                        "type": "string",
+                        "description": "Urgency level: low, medium, or high.",
+                    },
+                    "notes": {
+                        "type": "string",
+                        "description": "Any extra useful context from the conversation.",
+                    },
+                },
+                "required": ["requirement"],
+            },
+        },
+        save_lead,
     )
     return registry
 
